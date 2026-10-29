@@ -1,4 +1,4 @@
-#define AppVersion "0.1.0"
+#define AppVersion "0.1.1"
 [Setup]
 AppId={{A923B30F-6C62-41CC-9964-10AF3B5B78C1}
 AppName=Liubai Diary

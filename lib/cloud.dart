@@ -1,13 +1,17 @@
 import 'dart:convert';
+import 'dart:async';
+import 'dart:io';
+import 'network.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'entry.dart';
 
 class Cloud {
   final String url, key;
+  final http.Client? transport;
   final _vault = const FlutterSecureStorage();
   Map<String, dynamic>? session;
-  Cloud(this.url, this.key);
+  Cloud(this.url, this.key, {this.transport});
   String get sessionKey => 'liubai-session-$url';
   String? get userId => session?['user']?['id'] as String?;
   String? get email => session?['user']?['email'] as String?;
@@ -21,8 +25,26 @@ class Cloud {
       if (authenticated && session != null) 'Authorization': 'Bearer ${session!['access_token']}'};
     final req = http.Request(method, Uri.parse('$url$path'))..headers.addAll(headers);
     if (body != null) req.body = jsonEncode(body);
-    final res = await http.Response.fromStream(await req.send().timeout(const Duration(seconds: 25)))
-      .timeout(const Duration(seconds: 25));
+    req.followRedirects = false;
+    final client = transport ?? directClient();
+    late http.Response res;
+    try {
+      res = await http.Response.fromStream(await client.send(req)
+        .timeout(const Duration(seconds: 20))).timeout(const Duration(seconds: 20));
+    } on TimeoutException {
+      throw Exception('直连云端超时。本机日记仍可保存，尚未同步。');
+    } on HandshakeException catch (e) {
+      throw Exception(networkFailure(e));
+    } on SocketException catch (e) {
+      throw Exception(networkFailure(e));
+    } on http.ClientException catch (e) {
+      throw Exception(networkFailure(e));
+    } finally {
+      if (transport == null) client.close();
+    }
+    if (res.statusCode >= 300 && res.statusCode < 400) {
+      throw Exception('云端地址发生重定向，请检查项目 URL。配置和密码不会转发到其他地址。');
+    }
     dynamic data;
     try { data = jsonDecode(res.body); } catch (_) { data = null; }
     if (res.statusCode >= 400) {
@@ -31,7 +53,17 @@ class Cloud {
     }
     return data;
   }
+  Future<void> checkConnection() async {
+    final data = await request('GET', '/auth/v1/health', authenticated: false);
+    if (data is! Map || !data.containsKey('version')) {
+      throw Exception('收到响应，但不是预期的云端服务。请检查项目 URL。');
+    }
+  }
   Future<void> saveSession(Map<String, dynamic> value) async {
+    if (value['access_token'] is! String || value['refresh_token'] is! String ||
+        value['user'] is! Map || value['user']['id'] is! String) {
+      throw Exception('未收到有效登录会话，账号尚未登录。请检查邮箱确认和登录提示。');
+    }
     value['expires_at'] ??= DateTime.now().millisecondsSinceEpoch ~/ 1000 + (value['expires_in'] as int? ?? 3600);
     await _vault.write(key: sessionKey, value: jsonEncode(value));
     session = value;

@@ -116,7 +116,7 @@ class _HomeState extends State<Home> {
           const SizedBox(height:12),Row(children:[const Icon(Icons.circle,size:8,color:Color(0xff718369)),
             const SizedBox(width:8),Expanded(child:Text(c.status,style: const TextStyle(fontSize:12))),
             Text('${c.visible.length} 篇',style: const TextStyle(fontSize:12))]),
-          const SizedBox(height:4),Text(c.signedIn ? '账号：${c.cloud!.email}' : '本机模式 · 尚未连接云端',
+          const SizedBox(height:4),Text(c.signedIn ? '账号：${c.cloud!.email}' : (c.cloud == null ? '本机模式 · 未配置云端（可正常保存）' : '云端已配置 · 尚未登录（可本机保存）'),
             style:const TextStyle(fontSize:11,color:Colors.grey))])),
         Expanded(child: items.isEmpty ? const Center(child:Text('把今天的小事，写成明天的回忆。\n\n点击右下角开始写日记。',textAlign:TextAlign.center))
           : ListView.builder(padding:const EdgeInsets.fromLTRB(20,8,20,100),itemCount:items.length,itemBuilder:(ctx,i){
@@ -188,7 +188,13 @@ class _SettingsState extends State<Settings> {
       const Text('安卓与 Windows 配置同一个云端项目，并登录同一邮箱账号，即可同步。未配置时仍可在本机写日记。'),
       const SizedBox(height:20),TextField(controller:url,enabled:!busy,decoration:const InputDecoration(labelText:'Supabase 项目 URL',hintText:'https://项目编号.supabase.co')),
       const SizedBox(height:12),TextField(controller:key,enabled:!busy,decoration:const InputDecoration(labelText:'Publishable / anon 公钥（不是服务端密钥）')),
-      const SizedBox(height:12),OutlinedButton(onPressed:busy?null:()=>run(()=>c.configure(url.text,key.text),'云端配置已保存'),child:const Text('保存云端配置')),
+      const SizedBox(height:12),OutlinedButton(onPressed:busy?null:()=>run(()=>c.configure(url.text,key.text),'配置已保存，尚未验证连接；请点击下方检测直连'),child:const Text('保存云端配置')),
+      const SizedBox(height:12),
+      const Text('0.1.1 · 直连版 · App 不读取代理设置',style:TextStyle(fontSize:12)),
+      OutlinedButton.icon(onPressed:busy?null:()=>run(c.checkConnection,
+        '直连检测成功。可继续注册或登录；此检测不会上传日记。'),
+        icon:const Icon(Icons.network_check),label:const Text('检测直连')),
+      const Text('配置已保存、网络已连接和账号已登录是不同状态。同步前需要检测成功并登录账号。',style:TextStyle(fontSize:12)),
       const Divider(height:40),
       if(c.signedIn)...[Text('已登录：${c.cloud!.email}'),const SizedBox(height:12),
         FilledButton(onPressed:busy?null:()=>run(c.sync,'同步操作结束，返回列表查看具体状态'),child:const Text('立即同步')),

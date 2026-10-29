@@ -44,7 +44,17 @@ class DiaryController extends ChangeNotifier {
     final newNamespace = newCloud.userId == null ? 'guest' : '$normalized/${newCloud.userId}';
     final next = await store.read(newNamespace);
     await prefs.setString('cloud_url', normalized); await prefs.setString('cloud_key', key.trim());
-    cloud = newCloud; entries = next; status = '云端配置已保存'; notifyListeners();
+    cloud = newCloud; entries = next; status = '配置已保存 · 直连尚未检测'; notifyListeners();
+  }
+  Future<void> checkConnection() async {
+    if (cloud == null) throw Exception('请先保存云端配置。');
+    try {
+      await cloud!.checkConnection();
+      status = signedIn ? '直连检测成功 · 已登录，点击同步' : '直连检测成功 · 尚未登录';
+    } catch (_) {
+      status = '直连检测失败 · 本机保存仍可用';
+      rethrow;
+    } finally { notifyListeners(); }
   }
   Future<void> login(String email, String password) async {
     if (cloud == null) throw Exception('请先配置云端服务。');
