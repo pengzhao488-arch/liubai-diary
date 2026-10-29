@@ -1,3 +1,7 @@
+create schema if not exists liubai_private;
+revoke all on schema liubai_private from public, anon;
+grant usage on schema liubai_private to authenticated;
+
 -- Run once in your own Supabase SQL Editor. No diary data or credentials here.
 create table if not exists public.diary_entries (
   id uuid primary key,
@@ -19,7 +23,7 @@ create policy own_diaries_read on public.diary_entries for select to authenticat
 revoke all on public.diary_entries from anon, authenticated;
 grant select on public.diary_entries to authenticated;
 
-create or replace function public.save_diary(
+create or replace function liubai_private.save_diary_impl(
   p_id uuid, p_date text, p_title text, p_body text, p_mood text,
   p_version integer, p_deleted boolean
 ) returns jsonb language plpgsql security definer set search_path = '' as $$
@@ -47,6 +51,15 @@ begin
   end if;
   return jsonb_build_object('conflict', false, 'entry', to_jsonb(current_row));
 end;
+$$;
+revoke all on function liubai_private.save_diary_impl(uuid,text,text,text,text,integer,boolean) from public, anon;
+grant execute on function liubai_private.save_diary_impl(uuid,text,text,text,text,integer,boolean) to authenticated;
+
+create or replace function public.save_diary(
+  p_id uuid, p_date text, p_title text, p_body text, p_mood text,
+  p_version integer, p_deleted boolean
+) returns jsonb language sql security invoker set search_path = '' as $$
+  select liubai_private.save_diary_impl(p_id,p_date,p_title,p_body,p_mood,p_version,p_deleted);
 $$;
 revoke all on function public.save_diary(uuid,text,text,text,text,integer,boolean) from public, anon;
 grant execute on function public.save_diary(uuid,text,text,text,text,integer,boolean) to authenticated;
