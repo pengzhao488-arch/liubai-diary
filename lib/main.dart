@@ -9,9 +9,19 @@ import 'package:file_selector/file_selector.dart';
 import 'controller.dart';
 import 'store.dart';
 import 'entry.dart';
+import 'cloud.dart';
 
-Future<void> main() async {
+Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (args.contains('--check-native-network')) {
+    try {
+      final url = Platform.environment['LIUBAI_SELFTEST_URL'] ?? '';
+      final key = Platform.environment['LIUBAI_SELFTEST_KEY'] ?? '';
+      if (url.isEmpty || key.isEmpty) exit(2);
+      await Cloud(url,key).checkConnection();
+      exit(0);
+    } catch (_) { exit(1); }
+  }
   try {
     final c = DiaryController(await DiaryStore.open(), await SharedPreferences.getInstance());
     await c.init(); runApp(LiubaiApp(controller: c));
@@ -190,7 +200,7 @@ class _SettingsState extends State<Settings> {
       const SizedBox(height:12),TextField(controller:key,enabled:!busy,decoration:const InputDecoration(labelText:'Publishable / anon 公钥（不是服务端密钥）')),
       const SizedBox(height:12),OutlinedButton(onPressed:busy?null:()=>run(()=>c.configure(url.text,key.text),'配置已保存，尚未验证连接；请点击下方检测直连'),child:const Text('保存云端配置')),
       const SizedBox(height:12),
-      const Text('0.1.1 · 直连版 · App 不读取代理设置',style:TextStyle(fontSize:12)),
+      const Text('0.1.2 · 系统原生直连版 · App 不读取代理设置',style:TextStyle(fontSize:12)),
       OutlinedButton.icon(onPressed:busy?null:()=>run(c.checkConnection,
         '直连检测成功。可继续注册或登录；此检测不会上传日记。'),
         icon:const Icon(Icons.network_check),label:const Text('检测直连')),

@@ -1,7 +1,7 @@
 name: liubai_diary
 description: Private native diary for Android and Windows.
 publish_to: none
-version: 0.1.1+2
+version: 0.1.2+3
 environment:
   sdk: '>=3.7.0 <4.0.0'
 dependencies:
@@ -10,6 +10,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   http: ^1.3.0
+  ffi: 2.1.4
   path_provider: ^2.1.5
   shared_preferences: ^2.5.3
   flutter_secure_storage: ^9.2.4

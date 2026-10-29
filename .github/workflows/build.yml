@@ -51,6 +51,14 @@ jobs:
       - run: python tool/prepare.py
       - run: flutter pub get
       - run: flutter build windows --release
+      - name: Verify native HTTPS from packaged Windows executable
+        shell: pwsh
+        env:
+          LIUBAI_SELFTEST_URL: https://zkuubdsmgyblmixhxjat.supabase.co
+          LIUBAI_SELFTEST_KEY: sb_publishable_vdMoxT0FLmT-bj-6JXxuSw_Iuh5zGCB
+        run: |
+          $p = Start-Process -FilePath 'build/windows/x64/runner/Release/liubai_diary.exe' -ArgumentList '--check-native-network' -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "Native HTTPS health check failed: $($p.ExitCode)" }
       - name: Bundle Microsoft Visual C++ runtime
         shell: pwsh
         run: |

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'native_network.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 
@@ -11,7 +12,11 @@ HttpClient directHttpClient() {
   return client;
 }
 
-http.Client directClient() => IOClient(directHttpClient());
+http.Client directClient() {
+  if (Platform.isWindows) return NativeNetworkClient(windowsRequest);
+  if (Platform.isAndroid) return NativeNetworkClient(androidRequest);
+  return IOClient(directHttpClient());
+}
 
 String networkFailure(Object error) {
   if (error is HandshakeException) {
@@ -19,7 +24,7 @@ String networkFailure(Object error) {
       '这与账号密码无关，本机日记仍可保存；当前网络到云端的连接需要进一步排查。';
   }
   if (error is SocketException || error is http.ClientException) {
-    return '直连云端失败或连接被中断。本机日记仍可保存，但尚未上传。'
+    return '系统原生直连失败。本机日记仍可保存，但尚未上传。${error.toString()}\n'
       '请点击“检测直连”查看结果；反复修改密码不能解决这个连接问题。';
   }
   return '网络请求失败，本机日记仍保留。';
