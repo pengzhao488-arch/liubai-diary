@@ -55,7 +55,7 @@ jobs:
         shell: pwsh
         run: |
           $release = 'build/windows/x64/runner/Release'
-          $runtime = Get-ChildItem "${env:ProgramFiles}/Microsoft Visual Studio/2022/*/VC/Redist/MSVC/*/x64/Microsoft.VC143.CRT" -Directory | Sort-Object FullName -Descending | Select-Object -First 1
+          $runtime = Get-Item "${env:ProgramFiles}/Microsoft Visual Studio/2022/*/VC/Redist/MSVC/*/x64/Microsoft.VC143.CRT" | Sort-Object FullName -Descending | Select-Object -First 1
           if (-not $runtime) { throw 'Visual C++ runtime not found' }
           Copy-Item "$($runtime.FullName)/*.dll" $release
       - name: Create Windows installer
