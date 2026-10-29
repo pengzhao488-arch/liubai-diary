@@ -1,0 +1,12 @@
+.dart_tool/
+.flutter-plugins*
+.packages
+build/
+android/
+windows/
+installer/
+*.jks
+*.keystore
+.env
+.env.*
+!.env.example
