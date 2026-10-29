@@ -33,8 +33,15 @@ class DiaryStore {
     final temp = File('${main.path}.tmp');
     await temp.writeAsString(jsonEncode(entries.map((e) => e.toJson()).toList()), flush: true);
     if (await main.exists()) {
-      if (await backup.exists()) await backup.delete();
-      await main.rename(backup.path);
+      var valid = false;
+      try { valid = jsonDecode(await main.readAsString()) is List; } catch (_) {}
+      if (valid) {
+        if (await backup.exists()) await backup.delete();
+        await main.rename(backup.path);
+      } else {
+        // Never replace the known-good backup with a corrupt primary.
+        await main.delete();
+      }
     }
     await temp.rename(main.path);
   }

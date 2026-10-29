@@ -49,10 +49,11 @@ class DiaryController extends ChangeNotifier {
   Future<void> login(String email, String password) async {
     if (cloud == null) throw Exception('请先配置云端服务。');
     await cloud!.login(email.trim(), password);
+    entries = []; notifyListeners();
     entries = await store.read(namespace); status = '已登录 · 点击同步'; notifyListeners();
   }
   Future<void> logout() async {
-    await cloud?.logout(); entries = await store.read('guest'); status = '已切换到本机日记'; notifyListeners();
+    await cloud?.logout(); entries = []; notifyListeners(); entries = await store.read('guest'); status = '已切换到本机日记'; notifyListeners();
   }
   Future<void> save(Entry entry) async {
     final next = [...entries.where((e) => e.id != entry.id), entry];
