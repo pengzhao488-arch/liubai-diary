@@ -4,9 +4,12 @@ import 'package:http/io_client.dart';
 
 /// Explicit application-level direct routing. System VPN/TUN routing, if any,
 /// remains controlled by the operating system. TLS validation stays enabled.
-HttpClient directHttpClient() => HttpClient()
-  ..findProxy = (_) => 'DIRECT'
-  ..connectionTimeout = const Duration(seconds: 15);
+HttpClient directHttpClient() {
+  final client = HttpClient();
+  client.findProxy = (_) => 'DIRECT';
+  client.connectionTimeout = const Duration(seconds: 15);
+  return client;
+}
 
 http.Client directClient() => IOClient(directHttpClient());
 
